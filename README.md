@@ -16,7 +16,7 @@ The **Enhanced Rail-Fence Cipher (ERFC)** is a modern encryption scheme that mer
 
 ## 📚 Table of Contents
 
-- [🔐 Enhanced Rail Fence Cipher (ERFC)](#-enhanced-rail-fence-cipher-erfc)
+- [🔐 Enhanced Rail-Fence Cipher (ERFC)](#-enhanced-rail-fence-cipher-erfc)
   - [📘 Abstract](#-abstract)
   - [📚 Table of Contents](#-table-of-contents)
   - [🧠 Architecture Overview](#-architecture-overview)
@@ -39,6 +39,7 @@ The **Enhanced Rail-Fence Cipher (ERFC)** is a modern encryption scheme that mer
   - [🤝 Contributing](#-contributing)
   - [📄 License](#-license)
   - [🧾 Related Paper](#-related-paper)
+  - [📞 Contact and Feedback](#-contact-and-feedback)
 
 ---
 
@@ -257,6 +258,5 @@ docs/ERFC_paper.pdf
 ---
 ## 📞 Contact and Feedback
 
-Made by **Mohid Arshad**.  
 GitHub: [akamohid](https://github.com/akamohid)  
 Email: "akamohid@gmail.com"
