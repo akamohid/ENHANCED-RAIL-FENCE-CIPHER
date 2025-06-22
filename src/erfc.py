@@ -2,16 +2,16 @@ import hashlib
 import random
 import string
 import sys
-
+import regex
 
 EMOJI_LIST = [
     '😀', '😁', '😂', '😃', '😄', '😅', '😆', '😇', '😉', '😊',
-    '🗝️', '🔐', '🔓', '😏', '😐', '😒', '😔', '😕', '😖', '🔑',
-    '🔏', '😛', '😜', '😝', '😞', '😟', '😠', '💣', '😢', '😭',
-    '😮', '😯', '🥎', '😳', '😴', '😵', '😷', '🙈', '🙉', '🙊',
-    '🙋', '🙌', '🙏', '👐', '👑', '👒', '👓', '👔', '👕', '👖',
-    '🥇', '😶‍🌫️', '🧑‍🚀', '👜', '👞', '👟', '👻', '☠️', '🤖', '👽',
-    '🐬', '👦'
+    '😏', '😐', '😒', '😔', '😕', '😖', '😛', '😜', '😝', '😞',
+    '😟', '😠', '💣', '😢', '😭', '😮', '😯', '🥎', '😳', '😴',
+    '😵', '😷', '🙈', '🙉', '🙊', '🙋', '🙌', '🙏', '👐', '👑',
+    '👒', '👓', '👔', '👕', '👖', '🥇', '🧑', '👜', '👞', '👟',
+    '👻', '☠', '🤖', '👽', '🐬', '👦', '🐱', '🐶', '🐭', '🐹',
+    '🐰', '🐻'
 ]
 
 if len(EMOJI_LIST) != 62:
@@ -20,8 +20,6 @@ if len(EMOJI_LIST) != 62:
 
 def generate_substitution_mapping(key):
     chars = list(string.ascii_letters + string.digits)
-    if len(EMOJI_LIST) < 62:
-        raise ValueError("Not enough emojis to map all alphanumeric characters.")
     key_hash = hashlib.sha256(key.encode()).hexdigest()
     seed = int(key_hash, 16)
     random.seed(seed)
@@ -43,12 +41,15 @@ def generate_salt_and_encrypted_length(plaintext_length, key, length=12):
     encrypted_length = encrypt_length(length_str, key)
     salt_body = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
     final_salt = encrypted_length + salt_body
+    print(f"[Step 5] Generated Salt: {final_salt}")
     return final_salt
 
 def parse_salt_and_decrypt_length(final_salt, key):
     length_encrypted_hex = final_salt[:8]
     decrypted_length_str = decrypt_length(length_encrypted_hex, key)
     plaintext_length = int(decrypted_length_str)
+    print(f"[Step 1] Extracted Plaintext Length: {plaintext_length}")
+    print(f"[Step 1] Extracted Salt: {final_salt}")
     return plaintext_length
 
 def encrypt_length(length_str, key):
@@ -78,6 +79,7 @@ def compute_matrix_dims(key, text_length, expansion_factor=5):
     C = max((target // R) + 1, (a_sum % 50) + 20)
     while R * C < target:
         C += 1
+    print(f"[Step 2] Matrix Dimensions: {R} rows x {C} columns")
     return R, C
 
 def create_big_matrix(plaintext_emojis, R, C, key):
@@ -95,26 +97,25 @@ def create_big_matrix(plaintext_emojis, R, C, key):
         matrix[r][c] = plaintext_emojis[i]
     for i in range(real_count, total_cells):
         r, c = all_positions[i]
-        filler_emoji = random.choice(EMOJI_LIST)
-        matrix[r][c] = filler_emoji
+        matrix[r][c] = random.choice(EMOJI_LIST)
+    print(f"[Step 3] Big Matrix Created.")
     return matrix
 
 def serialize_matrix(matrix):
-    return ''.join([''.join(row) for row in matrix])
+    result = ''.join(cell for row in matrix for cell in row)
+    print(f"[Step 4] Serialized Cipher Body Length: {len(result)}")
+    return result
 
 def deserialize_matrix(cipher_body, R, C):
-    expected_length = R * C
-    if len(cipher_body) != expected_length:
-        raise ValueError(
-            f"Cipher body length does not match matrix dimensions. Expected {expected_length}, got {len(cipher_body)}.")
+    graphemes = regex.findall(r'\X', cipher_body)
+    if len(graphemes) != R * C:
+        raise ValueError(f"Cipher body length does not match matrix dimensions. Expected {R*C}, got {len(graphemes)}.")
     matrix = []
-    index = 0
-    for r in range(R):
-        row = []
-        for c in range(C):
-            row.append(cipher_body[index])
-            index += 1
+    it = iter(graphemes)
+    for _ in range(R):
+        row = [next(it) for _ in range(C)]
         matrix.append(row)
+    print(f"[Step 3] Deserialized Matrix.")
     return matrix
 
 def extract_plaintext_emojis(matrix, real_count, key):
@@ -131,13 +132,19 @@ def extract_plaintext_emojis(matrix, real_count, key):
     for i in range(real_count):
         r, c = all_positions[i]
         emojis.append(matrix[r][c])
-    return ''.join(emojis)
+    result = ''.join(emojis)
+    print(f"[Step 4] Extracted Real Emojis: {result}")
+    return result
 
 def substitute_text(text, substitution_mapping):
-    return ''.join(substitution_mapping[char] for char in text)
+    result = ''.join(substitution_mapping[char] for char in text)
+    print(f"[Step 1] Substituted Text: {result}")
+    return result
 
 def reverse_substitute_text(text, reverse_substitution_mapping):
-    return ''.join(reverse_substitution_mapping[char] for char in text)
+    result = ''.join(reverse_substitution_mapping[char] for char in text)
+    print(f"[Step 5] Recovered Plaintext: {result}")
+    return result
 
 def encrypt(plaintext, key):
     print("\n--- Encryption Process Started ---")
@@ -150,15 +157,10 @@ def encrypt(plaintext, key):
     except KeyError as e:
         print(f"Error: Character '{e.args[0]}' is not in substitution mapping.")
         return None, None
-    print(f"[Step 1] Substituted Text: {substituted_text}")
-    R, C = compute_matrix_dims(key, len(substituted_text), expansion_factor=5)
-    print(f"[Step 2] Matrix Dimensions: {R} rows x {C} columns")
+    R, C = compute_matrix_dims(key, len(substituted_text))
     big_matrix = create_big_matrix(substituted_text, R, C, key)
-    print(f"[Step 3] Big Matrix Created.")
     cipher_body = serialize_matrix(big_matrix)
-    print(f"[Step 4] Serialized Cipher Body Length: {len(cipher_body)}")
     final_salt = generate_salt_and_encrypted_length(len(plaintext), key, length=12)
-    print(f"[Step 5] Generated Salt: {final_salt}")
     message_hash = hash_message(key, final_salt, plaintext)
     print(f"[Step 6] Generated SHA-256 Hash: {message_hash}")
     final_ciphertext = cipher_body + final_salt
@@ -179,29 +181,23 @@ def decrypt(ciphertext, key, received_hash):
     except Exception as e:
         print(f"Error during salt parsing/decryption: {e}")
         return None
-    print(f"[Step 1] Extracted Plaintext Length: {plaintext_length}")
-    print(f"[Step 1] Extracted Salt: {final_salt}")
-    R, C = compute_matrix_dims(key, plaintext_length, expansion_factor=5)
-    print(f"[Step 2] Matrix Dimensions: {R} rows x {C} columns")
+    R, C = compute_matrix_dims(key, plaintext_length)
     try:
         matrix = deserialize_matrix(cipher_body, R, C)
     except ValueError as ve:
         print(f"Error during matrix deserialization: {ve}")
         return None
-    print(f"[Step 3] Deserialized Matrix.")
     try:
         real_emojis = extract_plaintext_emojis(matrix, plaintext_length, key)
     except ValueError as ve:
         print(f"Error during emoji extraction: {ve}")
         return None
-    print(f"[Step 4] Extracted Real Emojis: {real_emojis}")
     _, reverse_substitution_mapping = generate_substitution_mapping(key)
     try:
         plaintext = reverse_substitute_text(real_emojis, reverse_substitution_mapping)
     except KeyError as e:
         print(f"Error: Emoji '{e.args[0]}' not found in reverse substitution mapping.")
         return None
-    print(f"[Step 5] Recovered Plaintext: {plaintext}")
     regenerated_hash = hash_message(key, final_salt, plaintext)
     print(f"[Step 6] Regenerated SHA-256 Hash: {regenerated_hash}")
     print(f"[Step 6] Received SHA-256 Hash: {received_hash}")
@@ -227,6 +223,7 @@ def main():
             print("\n--- Encryption Output ---")
             print(f"Ciphertext: {ciphertext}")
             print(f"SHA-256 Hash: {full_hash}")
+            print(f"Ciphertext Length: {len(ciphertext)}")
             print("-------------------------\n")
         elif choice == '2':
             ciphertext = input("\n=== Decryption ===\nEnter the ciphertext: ")
