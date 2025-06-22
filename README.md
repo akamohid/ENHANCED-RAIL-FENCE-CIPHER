@@ -214,7 +214,7 @@ ERFC/
 If used in academic or technical work, cite as:
 
 ```bibtex
-@misc{umar2025erfc,
+@misc{mohid2025erfc,
   author       = {Mohammad Umar and Mohid Arshad},
   title        = {Enhanced Rail Fence Cipher (ERFC)},
   year         = 2025,
@@ -255,4 +255,8 @@ docs/ERFC_paper.pdf
 ```
 
 ---
-"# Enhanced-Rail-fence-Cipher" 
+## 📞 Contact and Feedback
+
+Made by **Mohid Arshad**.  
+GitHub: [akamohid](https://github.com/akamohid)  
+Email: "akamohid@gmail.com"
